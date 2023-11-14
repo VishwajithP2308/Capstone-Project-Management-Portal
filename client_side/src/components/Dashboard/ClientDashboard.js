@@ -14,9 +14,14 @@ import DialogContent from '@mui/material/DialogContent';
 import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 import Delete from '@mui/icons-material/Delete';
-
-
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import ShareIcon from '@mui/icons-material/Share';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Collapse from '@mui/material/Collapse';
 import DialogActions from '@mui/material/DialogActions';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
 
 import { 
@@ -144,7 +149,16 @@ const getDate = (dateString) => {
   return `${day}-${month}-${year}`;
 };
 
-
+const ExpandMore = styled((props) => {
+  const { expand, ...other } = props;
+  return <IconButton {...other} />;
+})(({ theme, expand }) => ({
+  transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
+  marginLeft: 'auto',
+  transition: theme.transitions.create('transform', {
+    duration: theme.transitions.duration.shortest,
+  }),
+}));
 
 export default function ClientDashBoard() {
 
@@ -160,6 +174,30 @@ export default function ClientDashBoard() {
   const [formOpen, setFormOpen] = useState(false);
   const [experienceText, setExperienceText] = useState('');
   const [skillsText, setSkillsText] = useState('');
+  const [expanded, setExpanded] = React.useState({});
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [emailAddresses, setEmailAddresses] = useState('');
+
+
+const handleEmailChange = (event) => {
+  setEmailAddresses(event.target.value);
+};
+
+  const handleInviteStudents = () => {
+    setInviteDialogOpen(true);
+  };
+
+  // Function to handle closing the invite students dialog
+  const handleCloseInviteDialog = () => {
+    setInviteDialogOpen(false);
+  };
+
+  // Function to handle the actual invitation logic (to be implemented)
+  const sendInvites = () => {
+    // Placeholder for sending invites logic
+    console.log('Invites sent!');
+    handleCloseInviteDialog();
+  };
   
   const handleClick = (id) => {
     setPopup(true);
@@ -176,9 +214,7 @@ export default function ClientDashBoard() {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    // Here, you can send the `experienceText` and `skillsText` to your server or storage service for storage.
-    // Example: You can use fetch or Axios to send a POST request to your backend.
-    // Remember to replace this with your actual data storage logic.
+   
     console.log('Experience Text:', experienceText);
     console.log('Skills/Technologies:', skillsText);
     // You can clear the form and close it after submission.
@@ -223,6 +259,13 @@ export default function ClientDashBoard() {
     setPage(0);
   };
 
+  const handleExpandClick = (projectId) => {
+    setExpanded(prevExpanded => ({
+      ...prevExpanded,
+      [projectId]: !prevExpanded[projectId], // Toggle the boolean value for the specific project ID
+    }));
+  };
+
   const handleSearchNameChange = (event) => {
     setSearchName(event.target.value);
     if (searchName) {
@@ -233,7 +276,11 @@ export default function ClientDashBoard() {
     }
   }  
 
-
+  
+  // const handleExpandClick = () => {
+  //   setExpanded(!expanded);
+  // };
+  
   return (
     <>
             <Navbar position="relative">
@@ -242,11 +289,12 @@ export default function ClientDashBoard() {
       {preview && <ProjectPreview projectId={selectedProject}  handleClose={handleClose} />}
       
 
-          
-      <Grid container spacing={2} justifyContent="center">
-  <Grid item xs={12} sm={6} md={6}> {/* Half the width on sm and md screens */}
-    <Card style={{ backgroundColor: 'white', border: '1px solid black' }}>
-      <CardContent style={{ padding: 0 }}>
+      
+      
+  <Grid container spacing={2} justifyContent="center">
+  <Grid item xs={12} sm={4} md={4}>
+  <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
+      <CardContent style={{ padding: 16 }}>
         {formOpen ? (
           <form>
             {/* Add your form fields here */}
@@ -307,9 +355,9 @@ export default function ClientDashBoard() {
         </DialogActions>
       </Dialog>
   </Grid>
-  <Grid item xs={12} sm={6} md={6}> {/* Also half the width on sm and md screens */}
-    <Card style={{ width: '100%', backgroundColor: 'white', border: '1px solid black' }}>
-      <CardContent style={{ padding: 0 }}>
+  <Grid item xs={12} sm={4} md={4}> {/* Also half the width on sm and md screens */}
+  <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
+      <CardContent style={{ padding: 16 }}>
         <Search style={{ width: '100%', margin: '0 auto', display: 'flex' }}> {/* Search component takes the full width */}
           <SearchIconWrapper style={{ paddingLeft: '16px' }}>
             <SearchOutlinedIcon />
@@ -325,11 +373,95 @@ export default function ClientDashBoard() {
       </CardContent>
     </Card>
   </Grid>
-  {/* The third <Grid item> has been removed, and the rest of the code remains unchanged */}
+  <React.Fragment>
+      <Grid container spacing={2} justifyContent="center">
+        {/* Other Grid items */}
+        <Grid item xs={12} sm={4} md={4}>
+        <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
+            <CardContent style={{ padding: 16 }}>
+              <Button 
+                variant="contained"
+                color="primary"
+                onClick={handleInviteStudents}
+                startIcon={<AddIcon />}
+                style={{
+                  width: '100%', 
+                  backgroundColor: '#4caf50',
+                  color: 'white', 
+                  textTransform: 'none', 
+                  borderRadius: 0, 
+                }}
+              >
+                Invite Learners
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Invite Students Dialog */}
+      <Dialog open={inviteDialogOpen} onClose={handleCloseInviteDialog}>
+        <DialogTitle>Invite Learners</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Enter the email addresses of the students you wish to invite.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Email Addresses"
+            type="email"
+            fullWidth
+            variant="outlined"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseInviteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={sendInvites} color="primary" variant="contained">
+            Send Invites
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </React.Fragment>
 </Grid>
 
+<Typography
+  variant="h5"
+  component="div"
+  sx={{ flexGrow: 1, color: "#0097EB", fontFamily: "Poppins", mt: 4, mb: 2 }}
+>
+  My experiences
+</Typography>
 
-    <StyledPaper>
+{/* Align items to the start (left) */}
+<Grid container spacing={2} alignItems="flex-start">
+  <Grid item xs={12} sm={6} md={4} lg={3}>
+    <Card sx={{ maxWidth: 345, mb: 4 }}>
+      <CardContent>
+        <Typography variant="h5" component="div">
+          Technical Skills
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          MongoDB
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          Express
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          React
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          Node.js
+        </Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+</Grid>
+
+<StyledPaper>
         <Toolbar sx={{height:"100px"}}>
          
          <Typography
@@ -350,7 +482,7 @@ export default function ClientDashBoard() {
                .map((project, index) => (
 
                 
-        <Grid item xs={12} sm={6} md={4} lg={3} key={project._id}> {/* Adjust the grid breakpoints as required */}
+        <Grid item xs={12} sm={4} md={4} lg={3} key={project._id}> {/* Adjust the grid breakpoints as required */}
           <Card sx={{ maxWidth: 345 }}> {/* You can adjust width as necessary */}
             <CardContent onClick={() => { setSelectedProject(project._id); setPreview(true); }}>
               <Typography variant="h5" component="div">
@@ -365,18 +497,42 @@ export default function ClientDashBoard() {
               <Typography variant="body2">
                 Created By: {project.createdBy}
               </Typography>
+            </CardContent>
+            <CardActions disableSpacing>
+            <IconButton aria-label="add to favorites">
+          <FavoriteIcon />
+           </IconButton>
+           <IconButton aria-label="share">
+              <ShareIcon />
+            </IconButton>
+            <IconButton
+              onClick={() => handleExpandClick(project._id)}
+              aria-expanded={expanded[project._id] || false}
+              aria-label="show more"
+            >
+              <ExpandMoreIcon />
+            </IconButton>
+          </CardActions>
+          <Collapse in={expanded[project._id] || false} timeout="auto" unmountOnExit>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <CircularProgress variant="determinate" value={project.progress || 0} />
+              </Box>
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <CircularProgress variant="determinate" value={70} />
             </Box>
+            <Typography variant="caption" display="block" gutterBottom>
+                Assigned To: {project.assignedTo || 'v.parushaboyena001@umb.edu'}
+              </Typography>
+              <CardActions sx={{ justifyContent: 'flex-end' }}>
+                <IconButton color="error" onClick={() => handleClick(project._id)} aria-label="delete">
+                  <Delete />
+                </IconButton>
+              </CardActions>
             </CardContent>
-            <CardActions sx={{ justifyContent: 'flex-end' }}>
-              <IconButton color="error" onClick={() => handleClick(project._id)} aria-label="delete">
-                <Delete />
-              </IconButton>
-            </CardActions>  
-            
-             </Card>
-            </Grid>
+          </Collapse>
+        </Card>
+      </Grid>
          ))
         }
        </Grid>
@@ -391,6 +547,8 @@ export default function ClientDashBoard() {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </StyledPaper>
+
+    
       </main>      
 
     </>
