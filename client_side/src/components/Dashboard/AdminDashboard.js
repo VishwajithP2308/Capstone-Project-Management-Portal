@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import jwt_decode from "jwt-decode";
 
 export default function AdminDashboard() {
-    
 
     const token = Cookies.get("token");
     const payload = jwt_decode(token);

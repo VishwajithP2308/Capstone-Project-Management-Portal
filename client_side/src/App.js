@@ -12,6 +12,7 @@ import CoursePage from 'pages/CoursePage';
 import Test from 'pages/Test';
 import UserProfilePage from 'pages/UserProfilePage';
 import PreferenceForm from 'components/forms/PreferenceForm';
+import ClientDashBoard from 'components/Dashboard/ClientDashboard';
 import Privacy_PolicyPage from 'pages/Privacy_Policy';
 
 function App() {

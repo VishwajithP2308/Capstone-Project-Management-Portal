@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PublishProjectForm from "components/forms/PublishProjectForm";
@@ -11,13 +12,10 @@ import IconButton from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
-import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 import Delete from '@mui/icons-material/Delete';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Collapse from '@mui/material/Collapse';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
@@ -82,6 +80,18 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   boxShadow: "none",
 }));
  
+const handleShareClick = (projectId) => {
+  // Construct the URL for the project. This might be different for your application.
+  const projectUrl = `${window.location.origin}/projects/${projectId}`;
+
+  // Use the navigator.clipboard API to copy the URL to the clipboard
+  navigator.clipboard.writeText(projectUrl).then(() => {
+    // You can display a message or toast to the user indicating the link was copied.
+    alert("Project link copied to clipboard!");
+  }).catch((err) => {
+    console.error('Could not copy text: ', err);
+  });
+};
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
@@ -175,29 +185,91 @@ export default function ClientDashBoard() {
   const [experienceText, setExperienceText] = useState('');
   const [skillsText, setSkillsText] = useState('');
   const [expanded, setExpanded] = React.useState({});
+  const emailRef = useRef();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [emailAddresses, setEmailAddresses] = useState('');
+  const [experiences, setExperiences] = useState([]);
+  const [latestExperience, setLatestExperience] = useState(() => {
+    // Retrieve the stored experience from localStorage
+    const savedExperience = localStorage.getItem('latestExperience');
+    return savedExperience ? JSON.parse(savedExperience) : null;
+  });
 
+  const clearExperience = () => {
+    localStorage.removeItem('latestExperience');
+    setLatestExperience(null);
+  };  
 
-const handleEmailChange = (event) => {
-  setEmailAddresses(event.target.value);
-};
+  const [email, setEmail] = useState('');
 
   const handleInviteStudents = () => {
+    // Logic to open the invite dialog
     setInviteDialogOpen(true);
   };
 
-  // Function to handle closing the invite students dialog
   const handleCloseInviteDialog = () => {
+    // Logic to close the invite dialog
     setInviteDialogOpen(false);
   };
 
-  // Function to handle the actual invitation logic (to be implemented)
-  const sendInvites = () => {
-    // Placeholder for sending invites logic
-    console.log('Invites sent!');
-    handleCloseInviteDialog();
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value);
   };
+
+  const sendInvites1 = async () => {
+    try {
+      // Add your logic to send invites here
+      console.log('Sending invites to:', email);
+    
+      console.log('Invites sent, closing dialog');
+      handleCloseInviteDialog();
+    } catch (error) {
+      console.error('Failed to send invites:', error);
+      // Optionally, you can still close the dialog on error, or handle it differently
+      handleCloseInviteDialog();
+    }
+  };
+  
+  
+  const handleFormSubmit = async (experienceText, skillsText) => {
+    try {
+      const response = await axios.post(
+        "/api/experience",
+        { experienceText, skillsText },
+        { headers: { "Content-Type": "application/json" } }
+      );
+  
+      const newExperience = response.data;
+      // Store the experience in localStorage
+      localStorage.setItem('latestExperience', JSON.stringify(newExperience));
+      setLatestExperience(newExperience);
+      setFormOpen(false);
+    } catch (err) {
+      console.log("Error with the api", err);
+    }
+  };
+  
+
+  // async function sendInvites1(email, username, password) {
+  //   try {
+  //     const response = await fetch('/api/sendCredentials', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ email, username, password }),
+  //     });
+  //     if (response.ok) {
+  //       console.log("Credentials sent successfully");
+  //     } else {
+  //       console.log("Failed to send credentials");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error: ", error);
+  //   }
+  // }
+  
+  
   
   const handleClick = (id) => {
     setPopup(true);
@@ -212,16 +284,12 @@ const handleEmailChange = (event) => {
     setFormOpen(false);
   }
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-   
-    console.log('Experience Text:', experienceText);
-    console.log('Skills/Technologies:', skillsText);
-    // You can clear the form and close it after submission.
-    setExperienceText('');
-    setSkillsText('');
-    handleCloseForm();
-  }
+  const formData = {
+    experienceText,
+    skillsText,
+    // Include any other fields or information, like user ID
+  };
+  
 
 
   useEffect(() => {
@@ -292,69 +360,81 @@ const handleEmailChange = (event) => {
       
       
   <Grid container spacing={2} justifyContent="center">
-  <Grid item xs={12} sm={4} md={4}>
-  <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
-      <CardContent style={{ padding: 16 }}>
-        {formOpen ? (
-          <form>
-            {/* Add your form fields here */}
-            <Button variant="contained" color="primary" type="submit">
-              Submit
-            </Button>
-          </form>
-        ) : (
-          <div>
-            <Button 
-              variant="contained"
-              color="primary"
-              onClick={handleOpenForm}
-              startIcon={<AddIcon />}
-              style={{
-                width: '100%', 
-                backgroundColor: '#4caf50', 
-                color: 'white', 
-                textTransform: 'none', 
-                borderRadius: 0, 
-              }}
-            > 
-              <Typography variant='h6'>
-                Add experience
-              </Typography>
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-    {/* The Dialog component for formOpen would be here */}
-    <Dialog open={formOpen} onClose={handleCloseForm} fullScreen>
-        <DialogContent>
-          <TextField
-            label="Tag your experience to help companies/students find it in the marketplace"
-            variant="outlined"
-            fullWidth
-            value={experienceText}
-            onChange={(e) => setExperienceText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogContent>
-          <TextField
-            label="Skills/Technologies"
-            variant="outlined"
-            fullWidth
-            value={skillsText}
-            onChange={(e) => setSkillsText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button variant="contained" color="primary" onClick={handleCloseForm}>
-            Close
-          </Button>
-          <Button variant="contained" color="primary" type="submit">
-            Submit
-          </Button>
-        </DialogActions>
-      </Dialog>
-  </Grid>
+  <Grid item xs={12} sm={6} md={6}>
+            {" "}
+            {/* Half the width on sm and md screens */}
+            <Card
+              style={{ backgroundColor: "white", border: "1px solid black" }}
+            >
+              <CardContent style={{ padding: 0 }}>
+                {formOpen ? (
+                  <form>
+                    {/* Add your form fields here */}
+                    <Button variant="contained" color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </form>
+                ) : (
+                  <div>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleOpenForm}
+                      startIcon={<AddIcon />}
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#4caf50",
+                        color: "white",
+                        textTransform: "none",
+                        borderRadius: 0,
+                      }}
+                    >
+                      <Typography variant="h6">Add experience</Typography>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            {/* The Dialog component for formOpen would be here */}
+            <Dialog open={formOpen} onClose={handleCloseForm} fullScreen>
+              <DialogContent>
+                <TextField
+                  label="Tag your experience to help companies/students find it in the marketplace"
+                  variant="outlined"
+                  fullWidth
+                  value={experienceText}
+                  onChange={(e) => setExperienceText(e.target.value)}
+                />
+              </DialogContent>
+              <DialogContent>
+                <TextField
+                  label="Skills/Technologies"
+                  variant="outlined"
+                  fullWidth
+                  value={skillsText}
+                  onChange={(e) => setSkillsText(e.target.value)}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleCloseForm}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  onClick={() => handleFormSubmit(experienceText, skillsText)}
+                >
+                  Submit
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </Grid>
+
   <Grid item xs={12} sm={4} md={4}> {/* Also half the width on sm and md screens */}
   <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
       <CardContent style={{ padding: 16 }}>
@@ -374,92 +454,84 @@ const handleEmailChange = (event) => {
     </Card>
   </Grid>
   <React.Fragment>
-      <Grid container spacing={2} justifyContent="center">
-        {/* Other Grid items */}
-        <Grid item xs={12} sm={4} md={4}>
-        <Card style={{ backgroundColor: 'white', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1)' }}>
-            <CardContent style={{ padding: 16 }}>
-              <Button 
-                variant="contained"
-                color="primary"
-                onClick={handleInviteStudents}
-                startIcon={<AddIcon />}
-                style={{
-                  width: '100%', 
-                  backgroundColor: '#4caf50',
-                  color: 'white', 
-                  textTransform: 'none', 
-                  borderRadius: 0, 
-                }}
-              >
-                Invite Learners
-              </Button>
-            </CardContent>
-          </Card>
+            <Grid container spacing={2} justifyContent="center">
+              {/* Other Grid items */}
+              <Grid item xs={12} sm={4} md={4}>
+                <Card
+                  style={{
+                    backgroundColor: "white",
+                    border: "1px solid #e0e0e0",
+                    boxShadow: "0 2px 4px 0 rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <CardContent style={{ padding: 16 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleInviteStudents}
+                      startIcon={<AddIcon />}
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#4caf50",
+                        color: "white",
+                        textTransform: "none",
+                        borderRadius: 0,
+                      }}
+                    >
+                      Invite Learners
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Invite Students Dialog */}
+            <Dialog open={inviteDialogOpen} onClose={handleCloseInviteDialog}>
+              <DialogTitle>Invite Learners</DialogTitle>
+              <DialogContent>
+                <DialogContentText>
+                  Enter the email addresses of the students you wish to invite.
+                </DialogContentText>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  fullWidth
+                  variant="outlined"
+                  value={email}
+                  onChange={handleEmailChange}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseInviteDialog} color="primary">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={sendInvites1}
+                  color="primary"
+                  variant="contained"
+                >
+                  Send Invites
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </React.Fragment>
         </Grid>
-      </Grid>
-
-      {/* Invite Students Dialog */}
-      <Dialog open={inviteDialogOpen} onClose={handleCloseInviteDialog}>
-        <DialogTitle>Invite Learners</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Enter the email addresses of the students you wish to invite.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Email Addresses"
-            type="email"
-            fullWidth
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseInviteDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={sendInvites} color="primary" variant="contained">
-            Send Invites
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </React.Fragment>
-</Grid>
-
-<Typography
-  variant="h5"
-  component="div"
-  sx={{ flexGrow: 1, color: "#0097EB", fontFamily: "Poppins", mt: 4, mb: 2 }}
->
-  My experiences
-</Typography>
-
-{/* Align items to the start (left) */}
-<Grid container spacing={2} alignItems="flex-start">
-  <Grid item xs={12} sm={6} md={4} lg={3}>
-    <Card sx={{ maxWidth: 345, mb: 4 }}>
+<Grid item xs={12} sm={6} md={6}>
+  {latestExperience && (
+    <Card style={{ backgroundColor: "white", border: "1px solid black", marginBottom: '10px' }}>
       <CardContent>
-        <Typography variant="h5" component="div">
-          Technical Skills
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          MongoDB
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          Express
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          React
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          Node.js
-        </Typography>
+      <Typography variant="h6">My Experiences</Typography>
+        <Typography variant="body1">{latestExperience.experienceText}</Typography>
+        <Typography variant="body1">{latestExperience.skillsText}</Typography>
+        {/* Display other details from the latest experience here */}
       </CardContent>
     </Card>
-  </Grid>
+  )}
 </Grid>
+
 
 <StyledPaper>
         <Toolbar sx={{height:"100px"}}>
@@ -499,12 +571,13 @@ const handleEmailChange = (event) => {
               </Typography>
             </CardContent>
             <CardActions disableSpacing>
-            <IconButton aria-label="add to favorites">
+            {/* <IconButton aria-label="add to favorites">
           <FavoriteIcon />
-           </IconButton>
-           <IconButton aria-label="share">
+           </IconButton> */}
+           <IconButton aria-label="share" onClick={() => handleShareClick(project._id)}>
               <ShareIcon />
-            </IconButton>
+           </IconButton>
+
             <IconButton
               onClick={() => handleExpandClick(project._id)}
               aria-expanded={expanded[project._id] || false}
@@ -522,7 +595,7 @@ const handleEmailChange = (event) => {
               <CircularProgress variant="determinate" value={70} />
             </Box>
             <Typography variant="caption" display="block" gutterBottom>
-                Assigned To: {project.assignedTo || 'v.parushaboyena001@umb.edu'}
+                Assigned To: {project.assignedTo || 'N/A'}
               </Typography>
               <CardActions sx={{ justifyContent: 'flex-end' }}>
                 <IconButton color="error" onClick={() => handleClick(project._id)} aria-label="delete">
